@@ -3,7 +3,6 @@
 package core
 
 import (
-	"io"
 	"net"
 )
 
@@ -28,17 +27,17 @@ func RunSimpleSwitch(red, blue net.Conn, rb, br Translator) {
 	NewSimpleSwitch(red, blue, rb, br).Run()
 }
 
-func (this *SimpleSwitch) pipe(r net.Conn, w net.Conn, t Translator, done, stop chan struct{}) error {
-	defer this.close(done)
+func (this *SimpleSwitch) pipe(r, w net.Conn, t Translator, done, stop chan struct{}) error {
+	defer close(done)
 	return t.Translate(r, w, stop)
 }
 
 func (this *SimpleSwitch) pipeRB() error {
-	return this.pipe(this.red, this.blue, this.rb, this.doneRB, this.doneBR)
+	return this.pipe(this.red, this.blue, this.rbt, this.doneRB, this.doneBR)
 }
 
 func (this *SimpleSwitch) pipeBR() error {
-	return this.pipe(this.blue, this.red, this.br, this.doneBR, this.doneRB)
+	return this.pipe(this.blue, this.red, this.brt, this.doneBR, this.doneRB)
 }
 
 func (this *SimpleSwitch) Run() {
