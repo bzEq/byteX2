@@ -19,6 +19,7 @@ type Translator interface {
 type Repeater struct{}
 
 const DEFAULT_COPY_SIZE = 4096
+const DEFAULT_TIMEOUT = 120
 
 func (this *Repeater) Translate(in, out net.Conn, stop chan struct{}) error {
 	for {
@@ -41,7 +42,6 @@ type HTTPPacker struct {
 }
 
 const HTTP_BUFFER_SIZE = 1 << 16
-const DEFAULT_TIMEOUT = 600
 
 func (this *HTTPPacker) Translate(in, out net.Conn, stop chan struct{}) error {
 	buf := make([]byte, HTTP_BUFFER_SIZE)
