@@ -27,17 +27,27 @@ func RunSimpleSwitch(red, blue net.Conn, rb, br Translator) {
 	NewSimpleSwitch(red, blue, rb, br).Run()
 }
 
-func (this *SimpleSwitch) pipe(r, w net.Conn, t Translator, done, stop chan struct{}) error {
+func (this *SimpleSwitch) pipe(r, w net.Conn, t Translator, done, stop chan struct{}) {
 	defer close(done)
-	return t.Translate(r, w, stop)
+	doneTranslate := make(chan struct{})
+	go func() {
+		defer close(doneTranslate)
+		t.Translate(r, w)
+	}()
+	select {
+	case <-stop:
+		return
+	case <-doneTranslate:
+		return
+	}
 }
 
-func (this *SimpleSwitch) pipeRB() error {
-	return this.pipe(this.red, this.blue, this.rbt, this.doneRB, this.doneBR)
+func (this *SimpleSwitch) pipeRB() {
+	this.pipe(this.red, this.blue, this.rbt, this.doneRB, this.doneBR)
 }
 
-func (this *SimpleSwitch) pipeBR() error {
-	return this.pipe(this.blue, this.red, this.brt, this.doneBR, this.doneRB)
+func (this *SimpleSwitch) pipeBR() {
+	this.pipe(this.blue, this.red, this.brt, this.doneBR, this.doneRB)
 }
 
 func (this *SimpleSwitch) Run() {
