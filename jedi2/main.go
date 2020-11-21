@@ -10,7 +10,7 @@ import (
 	"net"
 
 	"github.com/bzEq/byteX2/core"
-	socks5 "github.com/bzEq/byteX2/go-socks5"
+	socks5 "github.com/bzEq/byteX2/socks"
 )
 
 var options struct {
@@ -79,12 +79,6 @@ func handleLocal(red net.Conn) {
 
 func handle(red net.Conn) {
 	defer red.Close()
-	conf := &socks5.Config{}
-	server, err := socks5.New(conf)
-	if err != nil {
-		log.Println(err)
-		return
-	}
 	blue := core.MakePipe()
 	go func() {
 		defer blue[0].Close()
@@ -96,7 +90,8 @@ func handle(red net.Conn) {
 		}
 		core.RunSimpleSwitch(red, blue[0], rb, br)
 	}()
-	server.ServeConn(blue[1])
+	server := &socks5.Server{}
+	server.Serve(blue[1])
 }
 
 func main() {
