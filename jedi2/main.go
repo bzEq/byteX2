@@ -9,8 +9,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/bzEq/byteX/core"
-	socks5 "github.com/bzEq/byteX/go-socks5"
+	"github.com/bzEq/byteX2/core"
+	socks5 "github.com/bzEq/byteX2/go-socks5"
 )
 
 var options struct {
