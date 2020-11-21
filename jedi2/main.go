@@ -87,7 +87,6 @@ func handle(red net.Conn) {
 	}
 	blue := core.MakePipe()
 	defer blue[0].Close()
-	defer blue[1].Close()
 	go func() {
 		rb := &core.HTTPUnpacker{
 			P: createUnpackPass(),
