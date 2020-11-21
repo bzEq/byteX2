@@ -91,7 +91,10 @@ func handle(red net.Conn) {
 		core.RunSimpleSwitch(red, blue[0], rb, br)
 	}()
 	server := &socks5.Server{}
-	server.Serve(blue[1])
+	err := server.Serve(blue[1])
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func main() {
