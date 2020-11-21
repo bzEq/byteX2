@@ -25,7 +25,7 @@ func (this *Repeater) Translate(in, out net.Conn, stop chan struct{}) error {
 	for {
 		select {
 		case <-stop:
-			break
+			return nil
 		default:
 			in.SetReadDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 			out.SetReadDeadline(time.Now().Add(2 * DEFAULT_TIMEOUT * time.Second))
@@ -48,7 +48,7 @@ func (this *HTTPPacker) Translate(in, out net.Conn, stop chan struct{}) error {
 	for {
 		select {
 		case <-stop:
-			break
+			return nil
 		default:
 			in.SetReadDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 			n, err := in.Read(buf)
@@ -83,7 +83,7 @@ func (this *HTTPUnpacker) Translate(in, out net.Conn, stop chan struct{}) error 
 	for {
 		select {
 		case <-stop:
-			break
+			return nil
 		default:
 			in.SetReadDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 			req, err := http.ReadRequest(b)
