@@ -7,8 +7,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-
-	"github.com/bzEq/byteX2/core"
 )
 
 const (
@@ -82,6 +80,11 @@ type Request struct {
 	bufConn      io.Reader
 }
 
+type conn interface {
+	Write([]byte) (int, error)
+	RemoteAddr() net.Addr
+}
+
 // NewRequest creates a new Request from the tcp connection
 func NewRequest(bufConn io.Reader) (*Request, error) {
 	// Read the version byte
@@ -112,7 +115,7 @@ func NewRequest(bufConn io.Reader) (*Request, error) {
 }
 
 // handleRequest is used for request processing after authentication
-func (s *Server) handleRequest(req *Request, conn net.Conn) error {
+func (s *Server) handleRequest(req *Request, conn conn) error {
 	ctx := context.Background()
 
 	// Resolve the address if we have a FQDN
@@ -152,7 +155,7 @@ func (s *Server) handleRequest(req *Request, conn net.Conn) error {
 }
 
 // handleConnect is used to handle a connect command
-func (s *Server) handleConnect(ctx context.Context, conn net.Conn, req *Request) error {
+func (s *Server) handleConnect(ctx context.Context, conn conn, req *Request) error {
 	// Check if this is allowed
 	if ctx_, ok := s.config.Rules.Allow(ctx, req); !ok {
 		if err := sendReply(conn, ruleFailure, nil); err != nil {
@@ -194,13 +197,23 @@ func (s *Server) handleConnect(ctx context.Context, conn net.Conn, req *Request)
 	}
 
 	// Start proxying
-	core.RunSimpleSwitch(target, conn, &core.Repeater{}, &core.Repeater{})
+	errCh := make(chan error, 2)
+	go proxy(target, req.bufConn, errCh)
+	go proxy(conn, target, errCh)
 
+	// Wait
+	for i := 0; i < 2; i++ {
+		e := <-errCh
+		if e != nil {
+			// return from this function closes target (and conn).
+			return e
+		}
+	}
 	return nil
 }
 
 // handleBind is used to handle a connect command
-func (s *Server) handleBind(ctx context.Context, conn net.Conn, req *Request) error {
+func (s *Server) handleBind(ctx context.Context, conn conn, req *Request) error {
 	// Check if this is allowed
 	if ctx_, ok := s.config.Rules.Allow(ctx, req); !ok {
 		if err := sendReply(conn, ruleFailure, nil); err != nil {
@@ -219,7 +232,7 @@ func (s *Server) handleBind(ctx context.Context, conn net.Conn, req *Request) er
 }
 
 // handleAssociate is used to handle a connect command
-func (s *Server) handleAssociate(ctx context.Context, conn net.Conn, req *Request) error {
+func (s *Server) handleAssociate(ctx context.Context, conn conn, req *Request) error {
 	// Check if this is allowed
 	if ctx_, ok := s.config.Rules.Allow(ctx, req); !ok {
 		if err := sendReply(conn, ruleFailure, nil); err != nil {
@@ -343,8 +356,5 @@ type closeWriter interface {
 // down a dedicated channel
 func proxy(dst io.Writer, src io.Reader, errCh chan error) {
 	_, err := io.Copy(dst, src)
-	if tcpConn, ok := dst.(closeWriter); ok {
-		tcpConn.CloseWrite()
-	}
 	errCh <- err
 }
