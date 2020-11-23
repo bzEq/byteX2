@@ -149,15 +149,16 @@ func (this *Server) Serve(c net.Conn) (err error) {
 	if err != nil {
 		return
 	}
-	// FIXME: Strictly follow RFC.
-	reply := Reply{
-		VER:  VER,
-		REP:  REP_SUCC,
-		ATYP: req.ATYP,
-	}
 	if req.VER != VER {
 		err = fmt.Errorf("Unsupported SOCKS version: %v", req.VER)
 		return
+	}
+	// FIXME: Strictly follow RFC.
+	reply := Reply{
+		VER:      req.VER,
+		REP:      REP_SUCC,
+		ATYP:     req.ATYP,
+		BND_ADDR: make([]byte, len(req.DST_ADDR)),
 	}
 	if req.CMD != CMD_CONNECT {
 		err = fmt.Errorf("Unsupported CMD: %d", req.CMD)
