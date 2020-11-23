@@ -128,7 +128,13 @@ func (this *Server) getDialAddress(req Request) string {
 
 func (this *Server) sendReply(r Reply, w io.Writer) (err error) {
 	// FIXME: Respect Reply.
-	if _, err = w.Write([]byte{r.VER, r.REP, 0, 1, 0, 0, 0, 0, 0, 0}); err != nil {
+	if _, err = w.Write([]byte{r.VER, r.REP, 0, r.ATYP}); err != nil {
+		return
+	}
+	if _, err = w.Write(r.BND_ADDR); err != nil {
+		return
+	}
+	if _, err = w.Write(r.BND_PORT[:]); err != nil {
 		return
 	}
 	return
@@ -151,8 +157,8 @@ func (this *Server) Serve(c net.Conn) (err error) {
 	reply := Reply{
 		VER:      req.VER,
 		REP:      REP_SUCC,
-		ATYP:     req.ATYP,
-		BND_ADDR: make([]byte, len(req.DST_ADDR)),
+		ATYP:     1,
+		BND_ADDR: make([]byte, net.IPv4len),
 	}
 	if req.CMD != CMD_CONNECT {
 		err = fmt.Errorf("Unsupported CMD: %d", req.CMD)
