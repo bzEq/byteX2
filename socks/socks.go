@@ -44,24 +44,27 @@ type Server struct{}
 type Request struct {
 	VER, CMD, ATYP byte
 	DST_ADDR       []byte
-	DST_PORT       int
+	DST_PORT       [2]byte
 }
 
 type Reply struct {
 	VER, REP, ATYP byte
 	BND_ADDR       []byte
-	BND_PORT       int
+	BND_PORT       [2]byte
 }
 
 func (this *Server) exchangeMetadata(rw io.ReadWriter) (err error) {
 	buf := make([]byte, 255)
+	// VER, NMETHODS.
 	if _, err = io.ReadFull(rw, buf[:2]); err != nil {
 		return
 	}
+	// METHODS.
 	methods := buf[1]
 	if _, err = io.ReadFull(rw, buf[:methods]); err != nil {
 		return
 	}
+	// No auth for now.
 	if _, err = rw.Write([]byte{VER, 0}); err != nil {
 		return
 	}
@@ -105,18 +108,19 @@ func (this *Server) receiveRequest(r io.Reader) (req Request, err error) {
 	if err != nil {
 		return req, err
 	}
-	req.DST_PORT = int(binary.BigEndian.Uint16(buf[:2]))
+	copy(req.DST_PORT[:2], buf[:2])
 	return req, nil
 }
 
 func (this *Server) getDialAddress(req Request) string {
+	port := binary.BigEndian.Uint16(req.DST_PORT[:2])
 	switch req.ATYP {
 	case ATYP_IPV6:
-		return fmt.Sprintf("%s:%d", "["+net.IP(req.DST_ADDR).String()+"]", req.DST_PORT)
+		return fmt.Sprintf("%s:%d", "["+net.IP(req.DST_ADDR).String()+"]", port)
 	case ATYP_IPV4:
-		return fmt.Sprintf("%s:%d", net.IP(req.DST_ADDR).String(), req.DST_PORT)
+		return fmt.Sprintf("%s:%d", net.IP(req.DST_ADDR).String(), port)
 	case ATYP_DOMAINNAME:
-		return fmt.Sprintf("%s:%d", string(req.DST_ADDR), req.DST_PORT)
+		return fmt.Sprintf("%s:%d", string(req.DST_ADDR), port)
 	default:
 		return ""
 	}
@@ -124,7 +128,15 @@ func (this *Server) getDialAddress(req Request) string {
 
 func (this *Server) sendReply(r Reply, w io.Writer) (err error) {
 	// FIXME: Respect Reply.
-	_, err = w.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0})
+	if _, err = w.Write([]byte{r.VER, r.REP, 0, r.ATYP}); err != nil {
+		return
+	}
+	if _, err = w.Write(r.BND_ADDR); err != nil {
+		return
+	}
+	if _, err = w.Write(r.BND_PORT[:2]); err != nil {
+		return
+	}
 	return
 }
 
