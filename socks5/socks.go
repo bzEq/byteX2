@@ -113,14 +113,12 @@ func (this *Server) receiveRequest(r io.Reader) (req Request, err error) {
 }
 
 func (this *Server) getDialAddress(req Request) string {
-	port := binary.BigEndian.Uint16(req.DST_PORT[:2])
+	port := fmt.Sprintf("%d", binary.BigEndian.Uint16(req.DST_PORT[:2]))
 	switch req.ATYP {
-	case ATYP_IPV6:
-		return fmt.Sprintf("%s:%d", "["+net.IP(req.DST_ADDR).String()+"]", port)
-	case ATYP_IPV4:
-		return fmt.Sprintf("%s:%d", net.IP(req.DST_ADDR).String(), port)
+	case ATYP_IPV4, ATYP_IPV6:
+		return net.JoinHostPort(net.IP(req.DST_ADDR).String(), port)
 	case ATYP_DOMAINNAME:
-		return fmt.Sprintf("%s:%d", string(req.DST_ADDR), port)
+		return net.JoinHostPort(string(req.DST_ADDR), port)
 	default:
 		return ""
 	}
