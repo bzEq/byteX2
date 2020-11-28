@@ -9,16 +9,20 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"time"
 )
 
 type Translator interface {
-	Translate(in io.Reader, out io.Writer) error
+	Translate(in net.Conn, out net.Conn) error
 }
+
+const DEFAULT_TIMEOUT = 600
 
 type Repeater struct{}
 
-func (this *Repeater) Translate(in io.Reader, out io.Writer) error {
+func (this *Repeater) Translate(in net.Conn, out net.Conn) error {
 	_, err := io.Copy(out, in)
 	return err
 }
@@ -29,9 +33,10 @@ type HTTPPacker struct {
 
 const HTTP_BUFFER_SIZE = 1 << 16
 
-func (this *HTTPPacker) Translate(in io.Reader, out io.Writer) error {
+func (this *HTTPPacker) Translate(in net.Conn, out net.Conn) error {
 	buf := make([]byte, HTTP_BUFFER_SIZE)
 	for {
+		in.SetReadDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 		n, err := in.Read(buf)
 		if err != nil {
 			return err
@@ -46,6 +51,7 @@ func (this *HTTPPacker) Translate(in io.Reader, out io.Writer) error {
 		}
 		req.Host = DEFAULT_HOST
 		req.Header.Add("User-Agent", TLS_APP_PROTO)
+		out.SetWriteDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 		err = req.Write(out)
 		if err != nil {
 			return err
@@ -57,9 +63,10 @@ type HTTPUnpacker struct {
 	P Pass
 }
 
-func (this *HTTPUnpacker) Translate(in io.Reader, out io.Writer) error {
+func (this *HTTPUnpacker) Translate(in net.Conn, out net.Conn) error {
 	b := bufio.NewReader(in)
 	for {
+		in.SetReadDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 		req, err := http.ReadRequest(b)
 		if err != nil {
 			return err
@@ -74,6 +81,7 @@ func (this *HTTPUnpacker) Translate(in io.Reader, out io.Writer) error {
 		if body, err = this.P.RunOnBytes(body); err != nil {
 			return err
 		}
+		out.SetWriteDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 		_, err = out.Write(body)
 		if err != nil {
 			return err
@@ -85,7 +93,7 @@ type LVPacker struct{}
 
 type LVUnpacker struct{}
 
-func (this *LVPacker) Translate(in io.Reader, out io.Writer) error {
+func (this *LVPacker) Translate(in net.Conn, out net.Conn) error {
 	l := make([]byte, binary.MaxVarintLen64)
 	b := make([]byte, HTTP_BUFFER_SIZE)
 	for {
@@ -106,7 +114,7 @@ func (this *LVPacker) Translate(in io.Reader, out io.Writer) error {
 	}
 }
 
-func (this *LVUnpacker) Translate(in io.Reader, out io.Writer) error {
+func (this *LVUnpacker) Translate(in net.Conn, out net.Conn) error {
 	l := make([]byte, binary.MaxVarintLen64)
 	for {
 		if _, err := io.ReadFull(in, l); err != nil {
