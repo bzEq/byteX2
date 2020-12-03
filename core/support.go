@@ -59,14 +59,3 @@ func CreateBarebonesTLSConfig() (c *tls.Config, err error) {
 	}
 	return
 }
-
-func TuneBuffer(buf []byte, n int) bool {
-	if n >= len(buf) {
-		buf = make([]byte, 2*n)
-		return true
-	} else if n < len(buf)/2 {
-		buf = make([]byte, n)
-		return true
-	}
-	return false
-}

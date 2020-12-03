@@ -31,7 +31,7 @@ type HTTPPacker struct {
 	P Pass
 }
 
-const HTTP_BUFFER_SIZE = 4 << 10
+const HTTP_BUFFER_SIZE = 16 << 10
 
 func (this *HTTPPacker) Translate(in net.Conn, out net.Conn) error {
 	buf := make([]byte, HTTP_BUFFER_SIZE)
@@ -41,7 +41,6 @@ func (this *HTTPPacker) Translate(in net.Conn, out net.Conn) error {
 		if err != nil {
 			return err
 		}
-		defer TuneBuffer(buf, n)
 		body, err := this.P.RunOnBytes(buf[:n])
 		if err != nil {
 			return err
@@ -105,7 +104,6 @@ func (this *LVPacker) Translate(in net.Conn, out net.Conn) error {
 			}
 			return nil
 		}
-		defer TuneBuffer(b, n)
 		binary.PutUvarint(l, uint64(n))
 		if _, err = out.Write(l); err != nil {
 			return err
