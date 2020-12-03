@@ -31,7 +31,7 @@ type HTTPPacker struct {
 	P Pass
 }
 
-const HTTP_BUFFER_SIZE = 2 << 20
+const HTTP_BUFFER_SIZE = 16 << 10
 
 func (this *HTTPPacker) Translate(in net.Conn, out net.Conn) error {
 	buf := make([]byte, HTTP_BUFFER_SIZE)
