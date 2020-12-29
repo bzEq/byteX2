@@ -19,6 +19,8 @@ type Translator interface {
 }
 
 const DEFAULT_TIMEOUT = 600
+const DEFAULT_HOST = "www.wandu.com"
+const DEFAULT_USER_AGENT = "com.wandu.spider"
 
 type Repeater struct{}
 
@@ -50,7 +52,7 @@ func (this *HTTPPacker) Translate(in net.Conn, out net.Conn) error {
 			return err
 		}
 		req.Host = DEFAULT_HOST
-		req.Header.Add("User-Agent", TLS_APP_PROTO)
+		req.Header.Add("User-Agent", DEFAULT_USER_AGENT)
 		out.SetWriteDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
 		err = req.Write(out)
 		if err != nil {
@@ -72,7 +74,7 @@ func (this *HTTPUnpacker) Translate(in net.Conn, out net.Conn) error {
 			return err
 		}
 		req.Host = DEFAULT_HOST
-		req.Header.Add("User-Agent", TLS_APP_PROTO)
+		req.Header.Add("User-Agent", DEFAULT_USER_AGENT)
 		defer req.Body.Close()
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {

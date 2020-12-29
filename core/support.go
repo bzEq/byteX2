@@ -8,9 +8,6 @@ import (
 	"sync"
 )
 
-const TLS_APP_PROTO = "com.wandu.spider"
-const DEFAULT_HOST = "www.wandu.com"
-
 type OnceCloser struct {
 	once sync.Once
 	c    io.Closer
