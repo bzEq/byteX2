@@ -159,9 +159,9 @@ func (this *Server) Serve(c net.Conn) (err error) {
 		BND_ADDR: make([]byte, net.IPv4len),
 	}
 	if req.CMD != CMD_CONNECT {
-		err = fmt.Errorf("Unsupported CMD: %d", req.CMD)
 		reply.REP = REP_COMMAND_NOT_SUPPORTED
 		this.sendReply(reply, c)
+		err = fmt.Errorf("Unsupported CMD: %d", req.CMD)
 		return
 	}
 	if err = this.sendReply(reply, c); err != nil {
