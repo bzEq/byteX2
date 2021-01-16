@@ -7,7 +7,6 @@ import (
 	"compress/gzip"
 	"crypto/rc4"
 	"encoding/base64"
-	"errors"
 	"io"
 	"io/ioutil"
 )
@@ -34,30 +33,6 @@ func (this *RC4Pass) RunOnBytes(p []byte) ([]byte, error) {
 	result := make([]byte, len(p))
 	this.C.XORKeyStream(result, p)
 	return result, nil
-}
-
-const EMOJI_BEGIN = "😀😁😂😃😄😅😆"
-
-const EMOJI_END = "😐😑😶😏😔"
-
-type Padder struct{}
-
-func (this *Padder) RunOnBytes(p []byte) ([]byte, error) {
-	r := bytes.NewBuffer([]byte(EMOJI_BEGIN))
-	r.Write(p)
-	r.Write([]byte(EMOJI_END))
-	return r.Bytes(), nil
-}
-
-type Unpadder struct{}
-
-func (this *Unpadder) RunOnBytes(p []byte) ([]byte, error) {
-	b := []byte(EMOJI_BEGIN)
-	e := []byte(EMOJI_END)
-	if len(p) < len(b)+len(e) {
-		return p, errors.New("Unavailable buffer length")
-	}
-	return p[len(b) : len(p)-len(e)], nil
 }
 
 type Base64Enc struct{}
