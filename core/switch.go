@@ -6,6 +6,7 @@ import (
 	"net"
 )
 
+// SimpleSwitch is not responsible to close red and blue.
 type SimpleSwitch struct {
 	doneRB, doneBR chan struct{}
 	red, blue      net.Conn
