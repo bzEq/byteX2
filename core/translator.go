@@ -51,7 +51,7 @@ func (this *HTTPPacker) Translate(in net.Conn, out net.Conn) error {
 		if err != nil {
 			return err
 		}
-		// No need to invoke req.Body.Close() since bytes.Reader is wrapped as NopCloser.
+		defer req.Body.Close()
 		req.Host = DEFAULT_HOST
 		req.Header.Add("User-Agent", DEFAULT_USER_AGENT)
 		out.SetWriteDeadline(time.Now().Add(DEFAULT_TIMEOUT * time.Second))
@@ -74,7 +74,7 @@ func (this *HTTPUnpacker) Translate(in net.Conn, out net.Conn) error {
 		if err != nil {
 			return err
 		}
-		// Logically no need to invoke req.Body.Close() since it's read side here.
+		defer req.Body.Close()
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			return err
