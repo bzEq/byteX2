@@ -73,8 +73,6 @@ func (this *HTTPUnpacker) Translate(in net.Conn, out net.Conn) error {
 		if err != nil {
 			return err
 		}
-		req.Host = DEFAULT_HOST
-		req.Header.Add("User-Agent", DEFAULT_USER_AGENT)
 		defer req.Body.Close()
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
