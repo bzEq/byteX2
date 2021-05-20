@@ -14,7 +14,6 @@ import (
 )
 
 var options struct {
-	Key    string
 	Local  string
 	Remote string
 	Server string
@@ -37,8 +36,6 @@ func startServer(addr string, handler func(net.Conn)) {
 		go handler(c)
 	}
 }
-
-const RC4_KEY = "0xcafec0de"
 
 func createPackPass() core.Pass {
 	pm := core.NewPassManager()
@@ -98,7 +95,6 @@ func handle(red net.Conn) {
 }
 
 func main() {
-	flag.StringVar(&options.Key, "key", "0xc0de", "Key for the cipher")
 	flag.StringVar(&options.Local, "c", ":1080", "Client side server")
 	flag.StringVar(&options.Remote, "r", "", "Remote server address")
 	flag.StringVar(&options.Server, "s", ":8010", "Server")
