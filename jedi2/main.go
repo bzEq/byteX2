@@ -40,10 +40,10 @@ func startRelayers() {
 	var wg sync.WaitGroup
 	for _, addr := range addrs {
 		wg.Add(1)
-		go func() {
+		go func(addr string) {
 			defer wg.Done()
 			startRelayer(addr)
-		}()
+		}(addr)
 	}
 	wg.Wait()
 }
