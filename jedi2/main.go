@@ -14,27 +14,9 @@ import (
 )
 
 var options struct {
-	Local  string
-	Remote string
-	Server string
-	Dummy  bool
-}
-
-func startServer(addr string, handler func(net.Conn)) {
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer l.Close()
-	for {
-		c, err := l.Accept()
-		if err != nil {
-			log.Println(err)
-			break
-		}
-		go handler(c)
-	}
+	Local       string
+	Next        string
+	Transparent bool
 }
 
 func createPackPass() core.Pass {
@@ -51,30 +33,28 @@ func createUnpackPass() core.Pass {
 	return pm
 }
 
-func handleLocal(red net.Conn) {
-	defer red.Close()
-	blue, err := net.Dial("tcp", options.Remote)
+func startRelayer() {
+	l, err := net.Listen("tcp", options.Local)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	defer blue.Close()
-	var rb, br core.Translator
-	if options.Dummy {
-		rb = &core.Repeater{}
-		br = &core.Repeater{}
-	} else {
-		rb = &core.HTTPPacker{
-			P: createPackPass(),
+	defer l.Close()
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			log.Println(err)
+			break
 		}
-		br = &core.HTTPUnpacker{
-			P: createUnpackPass(),
+		if options.Next != "" {
+			go serveAsIntermediateRelayer(c)
+		} else {
+			go serveAsEndRelayer(c)
 		}
 	}
-	core.RunSimpleSwitch(red, blue, rb, br)
 }
 
-func handle(red net.Conn) {
+func serveAsEndRelayer(red net.Conn) {
 	defer red.Close()
 	blue := core.MakePipe()
 	go func() {
@@ -94,15 +74,33 @@ func handle(red net.Conn) {
 	}
 }
 
-func main() {
-	flag.StringVar(&options.Local, "c", ":1080", "Client side server")
-	flag.StringVar(&options.Remote, "r", "", "Remote server address")
-	flag.StringVar(&options.Server, "s", ":8010", "Server")
-	flag.BoolVar(&options.Dummy, "d", false, "Just a dummy repeater")
-	flag.Parse()
-	if options.Remote != "" {
-		startServer(options.Local, handleLocal)
-	} else {
-		startServer(options.Server, handle)
+func serveAsIntermediateRelayer(red net.Conn) {
+	defer red.Close()
+	blue, err := net.Dial("tcp", options.Next)
+	if err != nil {
+		log.Println(err)
+		return
 	}
+	defer blue.Close()
+	var rb, br core.Translator
+	if options.Transparent {
+		rb = &core.Repeater{}
+		br = &core.Repeater{}
+	} else {
+		rb = &core.HTTPPacker{
+			P: createPackPass(),
+		}
+		br = &core.HTTPUnpacker{
+			P: createUnpackPass(),
+		}
+	}
+	core.RunSimpleSwitch(red, blue, rb, br)
+}
+
+func main() {
+	flag.StringVar(&options.Local, "c", ":1080", "Address of local relayer")
+	flag.StringVar(&options.Next, "r", "", "Address of next-hop relayer")
+	flag.BoolVar(&options.Transparent, "t", false, "Indicate transparent relayer")
+	flag.Parse()
+	startRelayer()
 }
