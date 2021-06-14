@@ -8,6 +8,8 @@ import (
 	"flag"
 	"log"
 	"net"
+	"strings"
+	"sync"
 
 	"github.com/bzEq/byteX2/core"
 	socks5 "github.com/bzEq/byteX2/socks5"
@@ -33,8 +35,21 @@ func createUnpackPass() core.Pass {
 	return pm
 }
 
-func startRelayer() {
-	l, err := net.Listen("tcp", options.Local)
+func startRelayers() {
+	addrs := strings.Split(options.Local, ",")
+	var wg sync.WaitGroup
+	for _, addr := range addrs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			startRelayer(addr)
+		}()
+	}
+	wg.Wait()
+}
+
+func startRelayer(addr string) {
+	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Println(err)
 		return
@@ -98,9 +113,9 @@ func serveAsIntermediateRelayer(red net.Conn) {
 }
 
 func main() {
-	flag.StringVar(&options.Local, "c", ":1080", "Address of local relayer")
+	flag.StringVar(&options.Local, "c", ":1080,:8010", "Address of local relayer")
 	flag.StringVar(&options.Next, "r", "", "Address of next-hop relayer")
 	flag.BoolVar(&options.Transparent, "t", false, "Indicate transparent relayer")
 	flag.Parse()
-	startRelayer()
+	startRelayers()
 }
