@@ -113,7 +113,7 @@ func serveAsIntermediateRelayer(red net.Conn) {
 }
 
 func main() {
-	flag.StringVar(&options.Local, "c", ":1080,:8010", "Address of local relayer")
+	flag.StringVar(&options.Local, "c", ":1080,:8010", "Addresses of local relayers")
 	flag.StringVar(&options.Next, "r", "", "Address of next-hop relayer")
 	flag.BoolVar(&options.Transparent, "t", false, "Indicate transparent relayer")
 	flag.Parse()
