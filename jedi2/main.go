@@ -68,10 +68,10 @@ func serveAsEndRelayer(red net.Conn) {
 		defer blue[0].Close()
 		pm := createPackUnpackPassManager()
 		rb := &core.HTTPUnpacker{
-			P: pm.CreatePackPassManager(),
+			P: pm.CreateUnpackPassManager(),
 		}
 		br := &core.HTTPPacker{
-			P: pm.CreateUnpackPassManager(),
+			P: pm.CreatePackPassManager(),
 		}
 		core.RunSimpleSwitch(red, blue[0], rb, br)
 	}()
