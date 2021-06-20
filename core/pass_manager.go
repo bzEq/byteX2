@@ -44,7 +44,7 @@ type PackUnpackPassManager struct {
 
 func (this *PackUnpackPassManager) AddPairedPasses(pack Pass, unpack Pass) {
 	this.packPasses.PushBack(pack)
-	this.packPasses.PushBack(unpack)
+	this.unpackPasses.PushBack(unpack)
 }
 
 func (this *PackUnpackPassManager) CreatePackPassManager() *PassManager {
