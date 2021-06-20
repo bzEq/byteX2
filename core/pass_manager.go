@@ -36,3 +36,36 @@ func NewPassManager() *PassManager {
 		passes: list.New(),
 	}
 }
+
+type PackUnpackPassManager struct {
+	packPasses   *list.List
+	unpackPasses *list.List
+}
+
+func (this *PackUnpackPassManager) AddPairedPasses(pack Pass, unpack Pass) {
+	this.packPasses.PushBack(pack)
+	this.packPasses.PushBack(unpack)
+}
+
+func (this *PackUnpackPassManager) CreatePackPassManager() *PassManager {
+	pm := NewPassManager()
+	for e := this.packPasses.Front(); e != nil; e = e.Next() {
+		pm.AddPass(e.Value.(Pass))
+	}
+	return pm
+}
+
+func (this *PackUnpackPassManager) CreateUnpackPassManager() *PassManager {
+	pm := NewPassManager()
+	for e := this.unpackPasses.Back(); e != nil; e = e.Prev() {
+		pm.AddPass(e.Value.(Pass))
+	}
+	return pm
+}
+
+func NewPackUnpackPassManager() *PackUnpackPassManager {
+	return &PackUnpackPassManager{
+		packPasses:   list.New(),
+		unpackPasses: list.New(),
+	}
+}

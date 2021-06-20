@@ -21,17 +21,9 @@ var options struct {
 	Transparent bool
 }
 
-func createPackPass() core.Pass {
-	pm := core.NewPassManager()
-	// Compress
-	pm.AddPass(&core.Compressor{})
-	return pm
-}
-
-func createUnpackPass() core.Pass {
-	pm := core.NewPassManager()
-	// Decompress
-	pm.AddPass(&core.Decompressor{})
+func createPackUnpackPassManager() *core.PackUnpackPassManager {
+	pm := core.NewPackUnpackPassManager()
+	pm.AddPairedPasses(&core.Compressor{}, &core.Decompressor{})
 	return pm
 }
 
@@ -74,11 +66,12 @@ func serveAsEndRelayer(red net.Conn) {
 	blue := core.MakePipe()
 	go func() {
 		defer blue[0].Close()
+		pm := createPackUnpackPassManager()
 		rb := &core.HTTPUnpacker{
-			P: createUnpackPass(),
+			P: pm.CreatePackPassManager(),
 		}
 		br := &core.HTTPPacker{
-			P: createPackPass(),
+			P: pm.CreateUnpackPassManager(),
 		}
 		core.RunSimpleSwitch(red, blue[0], rb, br)
 	}()
@@ -102,11 +95,12 @@ func serveAsIntermediateRelayer(red net.Conn) {
 		rb = &core.Repeater{}
 		br = &core.Repeater{}
 	} else {
+		pm := createPackUnpackPassManager()
 		rb = &core.HTTPPacker{
-			P: createPackPass(),
+			P: pm.CreatePackPassManager(),
 		}
 		br = &core.HTTPUnpacker{
-			P: createUnpackPass(),
+			P: pm.CreateUnpackPassManager(),
 		}
 	}
 	core.RunSimpleSwitch(red, blue, rb, br)
